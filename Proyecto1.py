@@ -24,7 +24,14 @@ def negadorAleatorio(x):
 def generarListaAleatoria(clausulas,proposiciones):
     listaGenerada=np.zeros(clausulas,3) #Primero se crea una matriz de nx3 donde n es la cantidad de clausulas (o conjunciones)
     for i in range(0,clausulas): #Por cada clausula
+        literalesUtilizables=np.full(1,proposiciones,True) 
+        #Crear un registro de cuales literales son utilizables, True si es que lo son, False si es que no
+        #A fin de ahorrar memoria, el indice 0 indica si el 1 es utilizable o no y así sucesivamente.
         for j in range(0,3): #Para cada proposición dentro de una clausula
-            proposicion=negadorAleatorio(random.randint(1,proposiciones)) #Elegir un literal al azar y al mismo tiempo negarlo aleatoriamente
+            proposicion=random.randint(1,proposiciones) #Elegir un literal al azar
+            while literalesUtilizables[proposicion-1]==False: #Si ya se usó dentro de esta clausula
+                proposicion=random.randint(1,proposiciones) #Elegir otro al azar hasta que sea uno utilizable
+            literalesUtilizables[proposicion-1]=False #Marcar el elegido como no utilizable dentro de esta clausula
+            proposicion=negadorAleatorio(proposicion) #Aleatoriamente negar o mantener el literal
             listaGenerada[i][j]=proposicion #Agregar el literal aleatorizado a la clausula i en el espacio j de la disyunción
-    return listaGenerada
+    return listaGenerada #Entrega la lista
