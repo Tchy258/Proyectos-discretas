@@ -22,9 +22,9 @@ def negadorAleatorio(x):
 
 #generarListaAleatoria recibe la cantidad de clausulas y la cantidad de proposiciones y genera una lista al azar de formulas en 3-CNF
 def generarListaAleatoria(clausulas,proposiciones):
-    listaGenerada=np.zeros(clausulas,3) #Primero se crea una matriz de nx3 donde n es la cantidad de clausulas (o conjunciones)
+    listaGenerada=np.zeros((clausulas,3)) #Primero se crea una matriz de nx3 con ceros donde n es la cantidad de clausulas (o conjunciones)
     for i in range(0,clausulas): #Por cada clausula
-        literalesUtilizables=np.full(1,proposiciones,True) 
+        literalesUtilizables=np.full(proposiciones,True)
         #Crear un registro de cuales literales son utilizables, True si es que lo son, False si es que no
         #A fin de ahorrar memoria, el indice 0 indica si el 1 es utilizable o no y así sucesivamente.
         for j in range(0,3): #Para cada proposición dentro de una clausula
