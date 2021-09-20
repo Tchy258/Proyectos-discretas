@@ -1,7 +1,8 @@
+from os import write
 import random
 import numpy as np
 from pysat.solvers import Minisat22
-
+from stopwatch import StopWatch
 #Primero hay que ver cuantas n clausulas hay que recibir (cuantos array hay que recibir)
 
 cantidadClausulas=int(input('Cantidad de clausulas: '))
@@ -68,7 +69,7 @@ class arbolDeVerdad():
           valuaciones[i]=1 #Entonces la valuación para este literal es 1 (True)
         else: #Si el valor de verdad es 1
           valuaciones[i]=0 #Entonces la valuación es 0 (False)
-    resultado=max(valuaciones[0],valuaciones[1],valuaciones[2]) #Si al menos uno es cierto, el máximo será 1, si no, será 0
+    resultado=int(max(valuaciones[0],valuaciones[1],valuaciones[2])) #Si al menos uno es cierto, el máximo será 1, si no, será 0
     return resultado
 
 
@@ -118,8 +119,8 @@ def asignarValores(caso,maximo):
   for i in range(0,maximo):
     arreglo[i]=int(binario[i])
   return arreglo
- 
-#evaluarLista recibe una lista de literales en 3-CNF y dice si es satisfactible o no y si es que si, retorna una combinación que la satisface.
+
+
 def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
   arbol=construirArbol(lista,0,cantidadClausulas-1) #Se construye el árbol binario para esta lista de conjunciones de literales en 3-CNF
   combinacionesTotales=int(2**cantidadProposiciones) #Siempre habrá 2^cantidad de literales combinaciones de verdad posibles
@@ -131,30 +132,94 @@ def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
     mitad=combinacionesTotales//2 #Dividir las posibles valuaciones en mitades
     izquierda=mitad #Desde mitad hacia atras
     derecha=mitad+1 #Desde mitad+1 hacia adelante
-  while esSatisfactible==0 and combinacionesTotales>0 and izquierda>0 and derecha<2**cantidadProposiciones: #Mientras la formula no sea satisfactible con los valores de verdad actuales
+  while esSatisfactible==0 and combinacionesTotales>0 and izquierda>=0 and derecha<=2**cantidadProposiciones: #Mientras la formula no sea satisfactible con los valores de verdad actuales
     combinacionesTotales-=2 #Descontar dos combinaciones posible del total
     valoresDeVerdad=asignarValores(izquierda,cantidadProposiciones) #Asignar nuevos valores de verdad para la conversion binaria del numero izquierda a valores de verdad
     (esSatisfactible,valuacionTestigo)=arbol.recorrer(valoresDeVerdad) #Recorrer el árbol con los nuevos valores
     if esSatisfactible: break #Si ahora es satisfactible, parar
     valoresDeVerdad=asignarValores(derecha,cantidadProposiciones) #Asignar nuevos valores de verdad con el numero derecha
     (esSatisfactible,valuacionTestigo)=arbol.recorrer(valoresDeVerdad) #Recorrer el árbol con los nuevos valores
-    if esSatisfactible: break #Si ahora es satisfactible, parar
+    if esSatisfactible: break #Si es satisfactible, parar
     izquierda-=1 #Disminuir izquierda en 1
     derecha+=1 #Aumentar derecha en 1
   if esSatisfactible==1: #Si encontré una combinación de valores de verdad que satisface a todo el árbol
     return (True,valuacionTestigo) #Retornar True y la valuación testigo
   else: #Si agoté todas las combinaciones y no se pudo satisfacer el árbol
     return (False,None) #Retornar False y None
-  
-lista=generarListaAleatoria(cantidadClausulas,cantidadProposiciones)
+      
+    
+cronometro=StopWatch() #Crear una instancia de stopwatch
+tiempoTotal=0 #Variables para registrar el tiempo total de cada algoritmo
+tiempoTotalMinisat=0
 
-(satisfactibilidad,valores)=evaluarLista(lista,cantidadClausulas,cantidadProposiciones)
-
-print('Lista generada: ')
-print(lista)
-if not satisfactibilidad:
-    print('No es satisfactible')
-else:
-    print('Es satisfactible')
-    print('Valuacion testigo: ')
-    print(valores)
+f = open('Resultados.txt', 'w') #f es un archivo de texto en el que estarán todas las listas, su satisfactibilidad, testigo si es que hay y el tiempo total de cada algoritmo
+for i in range(0,20): #A lo largo de 20 iteraciones
+    print('Iteracion numero: '+str(i+1)) #Imprimir a la consola
+    f.write('Iteracion numero: '+str(i+1)+'\n') #Escribir en el archivo
+    lista=generarListaAleatoria(cantidadClausulas,cantidadProposiciones) #Se genera una lista
+    cronometro.start() #Se empieza el cronometro
+    (satisfactibilidad,valores)=evaluarLista(lista,cantidadClausulas,cantidadProposiciones) #Se evalua la lista
+    tiempo=cronometro.stop() #Se detiene el cronometro
+    tiempoTotal+=tiempo #Se añade el tiempo actual al tiempo total
+    print('Lista generada: ')
+    print(lista)
+    for j in range(0,cantidadClausulas):
+        f.write('[' + str(lista[j][0]) + ',' + str(lista[j][1]) +',' + str(lista[j][2]) +']\n')
+    if not satisfactibilidad: #Si la lista no es satisfactible
+        print('No es satisfactible')
+        print('')
+        f.write('No es satisfactible\n\n')
+    else: #Si es satisfactible
+        print('Es satisfactible')
+        f.write('Es satisfactible\n')
+        print('Valuacion testigo: ')
+        f.write('Valuacion testigo: \n')
+        print(valores) #Mostrar la valuacion testigo en la consola
+        f.write('[') #Escribirla
+        for j in range(0,valores.size):
+            if j!=valores.size-1:
+                f.write(str(valores[j])+',')
+            else:
+                f.write(str(valores[j])+']\n')
+    print("Tiempo de ejecución: ",tiempo,'seg') #Mostrar el tiempo de ejecucion
+    f.write('Tiempo de ejecución: '+str(tiempo)+' seg \n') #Escribirlo
+    Lista=list(lista) #Se convierte el arreglo de arreglos numpy a una lista de listas de python para entregarlo como argumento al algoritmo minisat
+    for i in range(0,cantidadClausulas): #Por cada arreglo en la nueva lista
+        Lista[i]=list(Lista[i]) #Convertir el arreglo a lista
+        for j in range(0,3): #Por cada valor de la lista
+          Lista[i][j]=int(Lista[i][j]) #Convertir el valor a un entero
+    cronometro.start() #Se empieza el cronometro
+    with Minisat22(bootstrap_with=Lista) as m: #Se ejecuta el algoritmo minisat con la lista de clausulas 
+        satisfactibilidadMinisat=m.solve() #Se guarda la satisfactibilidad según el algoritmo minisat (True o False)
+        testigoMinisat=m.get_model() #Se rescata la valuacion testigo según el algoritmo minisat si es que existe
+    tiempo=cronometro.stop() #Se guarda el tiempo transcurrido para ejectuar el algoritmo minisat
+    tiempoTotalMinisat+=tiempo #Se añade al contador de su tiempo total
+    print('Valuación Minisat22: '+str(satisfactibilidadMinisat)) #Se imprime la satisfactiblidad
+    print('Testigo Minisat: ',testigoMinisat) #Se imprime la valuacion testigo
+    f.write('Valuación Minisat22: '+str(satisfactibilidadMinisat)+'\n')
+    f.write('Testigo Minisat:\n')
+    if testigoMinisat is not None: #Si existe una valuacion testigo
+      for i in range(0,len(testigoMinisat)): #Escribirla
+        if i==0:
+          f.write('[ ')
+        if i!=len(testigoMinisat)-1:
+          f.write(str(testigoMinisat[i])+' , ')
+        else:
+          f.write(str(testigoMinisat[i])+' ]\n')
+    print('Tiempo de ejecución: ',tiempo,'s') #Imprimir el tiempo de ejecucion
+    f.write('Tiempo de ejecución: '+str(tiempo)+' seg \n') #Escribirlo
+    if satisfactibilidadMinisat!=satisfactibilidad: 
+      #Si hay una discrepancia entre la satisfactibilidad según el algoritmo programado y el algoritmo Minisat
+      print('Discrepancia!')
+      break #Se detiene el programa, en teoría, este bloque if nunca debiese ejecutarse
+print('')
+print('Tiempo total de algoritmo propio: '+str(tiempoTotal)+' seg') #Imprimir el tiempo total del algoritmo programado
+print('Tiempo promedio: '+str(tiempoTotal/20)+' seg') #Imprimir el tiempo promedio del algoritmo propio por cada iteracion
+print('')
+print('Tiempo total de algoritmo Minisat: '+str(tiempoTotalMinisat)+' seg') #Imprimir el tiempo total del algoritmo Minisat
+print('Tiempo promedio: '+str(tiempoTotalMinisat/20)+'seg') #Imprimir el tiempo promedio del algoritmo Minisat por cada iteración
+f.write('\nTiempo total de algoritmo propio: '+str(tiempoTotal)+'seg\n') #Escribir estos tiempos
+f.write('Tiempo promedio: '+str(tiempoTotal/20)+' seg\n\n')
+f.write('Tiempo total de algoritmo Minisat: '+str(tiempoTotalMinisat)+' seg\n')
+f.write('Tiempo promedio: '+str(tiempoTotalMinisat/20)+' seg\n')
+f.close() #Guardar el archivo
