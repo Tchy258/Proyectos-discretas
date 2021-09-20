@@ -133,7 +133,7 @@ def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
     izquierda=mitad #Desde mitad hacia atras
     derecha=mitad+1 #Desde mitad+1 hacia adelante
   while esSatisfactible==0 and combinacionesTotales>0 and izquierda>=0 and derecha<=2**cantidadProposiciones: #Mientras la formula no sea satisfactible con los valores de verdad actuales
-    combinacionesTotales-=2 #Descontar dos combinaciones posible del total
+    combinacionesTotales-=2 #Descontar dos combinaciones posibles del total
     valoresDeVerdad=asignarValores(izquierda,cantidadProposiciones) #Asignar nuevos valores de verdad para la conversion binaria del numero izquierda a valores de verdad
     (esSatisfactible,valuacionTestigo)=arbol.recorrer(valoresDeVerdad) #Recorrer el árbol con los nuevos valores
     if esSatisfactible: break #Si ahora es satisfactible, parar
