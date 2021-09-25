@@ -3,7 +3,7 @@ import random
 import numpy as np
 from pysat.solvers import Minisat22
 from stopwatch import StopWatch
-#Primero hay que ver cuantas n clausulas hay que recibir (cuantos array hay que recibir)
+#Primero hay que ver cuantas n clausulas hay que recibir (cuantos array hay que generar)
 
 cantidadClausulas=int(input('Cantidad de clausulas: '))
 
