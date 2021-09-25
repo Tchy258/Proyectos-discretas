@@ -16,7 +16,7 @@ cantidadProposiciones=int(input('Cantidad de proposiciones: '))
 #negadorAleatorio recibe una proposicion x, y dependiendo del valor de la variable negar, la niega o la mantiene
 def negadorAleatorio(x):
     negar=random.random() #negar es un numero aleatorio entre 0 y 1
-    if negar>=0.5: #Si negar es mayor que 0.5
+    if negar>=0.5: #Si negar es mayor o igual que 0.5
         return x #La proposición se mantiene
     else: #Si no
         return -x #Se niega
