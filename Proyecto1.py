@@ -7,7 +7,7 @@ from stopwatch import StopWatch
 
 cantidadClausulas=int(input('Cantidad de clausulas: '))
 
-#Luego hay que ver cuantas proposiciones hay
+#Luego hay que ver cuantas proposiciones (literales) hay
 
 cantidadProposiciones=int(input('Cantidad de proposiciones: '))
 
@@ -44,7 +44,7 @@ def generarListaAleatoria(clausulas,proposiciones):
 #los valores de verdad a utilizar para su clausula, luego todos los nodos deben tener valor 1 para satisfacer la formula 3-CNF
 class arbolDeVerdad():
   def __init__(self,clausula,hijoIzq=None,hijoDer=None):
-    self.clausula=clausula
+    self.clausula=clausula #Variable para almacenar la clausula de este nodo
     self.hijoIzq=hijoIzq
     self.hijoDer=hijoDer
 
@@ -75,20 +75,19 @@ class arbolDeVerdad():
 
 
   #El método recorrer, dado un arreglo de valores de verdad, va evaluando cada clausula por separado recursivamente con el método evaluar y
-  #retorna una 3 tupla donde el primer valor es un 0 o 1, usado para ver satisfactibilidad, el arreglo de valores de verdad para tener
-  #una valuación testigo si es que se encuentra, y un tercer valor que puede ser None o una clausula no satisfecha si es que los valores
-  #de verdad no satisfacen la fórmula para elegir nuevos valores de verdad que si satisfagan esa clausula.
+  #retorna una 2 tupla donde el primer valor es un 0 o 1, usado para ver satisfactibilidad y el arreglo de valores de verdad para tener
+  #una valuación testigo si es que se encuentra o en su defecto, un None.
   def recorrer(self,valoresDeVerdad):
     valor=self.evaluar(valoresDeVerdad) #Evaluar esta clausula para los valores de verdad dados
     if valor==1: #Si esta clausula se cumple
-      if self.hijoIzq is None and self.hijoDer is None: #Si estoy en una hoja del árbol
+      if self.hijoIzq is None and self.hijoDer is None: #Si el nodo actual en una hoja del árbol
         return (1,valoresDeVerdad) #Retornar 1 (True), la valuación testigo y None, porque todas las clausulas son satisfactibles en esta rama
-      else: #Si no estoy en una hoja
-        if self.hijoIzq is None and self.hijoDer is not None: #Si tengo hijo derecho pero no izquierdo
+      else: #Si el nodo actual no es una hoja
+        if self.hijoIzq is None and self.hijoDer is not None: #Si el nodo actual tiene hijo derecho pero no izquierdo
           return self.hijoDer.recorrer(valoresDeVerdad) #Retornar valuación del árbol del hijo derecho
-        if self.hijoIzq is not None and self.hijoDer is None: #Si tengo hijo izquierdo pero no derecho
+        if self.hijoIzq is not None and self.hijoDer is None: #Si el nodo actual tiene hijo izquierdo pero no derecho
           return self.hijoIzq.recorrer(valoresDeVerdad) #Retornar valuación del árbol del hijo izquierdo
-        else: #Si tengo ambos hijos
+        else: #Si el nodo actual tiene ambos hijos
           izquierdo=self.hijoIzq.recorrer(valoresDeVerdad) #Evaluar el hijo izquierdo
           derecho=self.hijoDer.recorrer(valoresDeVerdad) #Evaluar el hijo derecho
           minimo=int(min(izquierdo[0],derecho[0])) #Ver el minimo entre los dos hijos, es decir, si al menos una clausula no se satisface, minimo es 0, si no, es 1
@@ -102,25 +101,27 @@ class arbolDeVerdad():
 #separando la lista en intervalos de tamaño n_i/2 donde n_i es el tamaño del subintervalo.
 #Inicialmente, limite inferior es 0 y limite superior es el tamaño de la lista menos 1
 def construirArbol(lista,limiteInferior,limiteSuperior):
-  if limiteInferior>limiteSuperior: #Caso base, estoy en un intervalo de clausulas vacio
+  if limiteInferior>limiteSuperior: #Caso base, un intervalo de clausulas vacio
     return None #Retornar None
-  else: #Si estoy dentro de un rango de clausulas válido
-    mitad=int((limiteInferior+limiteSuperior)//2) #Escoger la clausula (por su indice) que está en la mitad de este rango
+  else: #Si estoy dentro de un intervalo de clausulas válido
+    mitad=int((limiteInferior+limiteSuperior)//2) #Escoger la clausula (por su indice) que está en la mitad de este intervalo
     arbol=arbolDeVerdad(lista[mitad]) #Insertarla en el árbol binario
     arbol.hijoIzq=construirArbol(lista,limiteInferior,mitad-1) #En el hijo izquierdo, insertar el intervalo de clausulas a la izquierda
     arbol.hijoDer=construirArbol(lista,mitad+1,limiteSuperior) #En el hijo derecho, insertar el intervalo de clausulas a la derecha
     return arbol #Una vez todas las clausulas fueron insertadas (se llegó a intervalos vacios), retornar el árbol generado
 
 #asignarValores, toma un numero y lo convierte en binario para generar una posible fila de una tabla de verdad
-#con "maximo" cantidad de proposiciones
-def asignarValores(caso,maximo):
-  binario=np.binary_repr(caso,width=maximo)
-  arreglo=np.zeros(maximo)
-  for i in range(0,maximo):
-    arreglo[i]=int(binario[i])
-  return arreglo
+#con "tamanoMaximo" cantidad de proposiciones
+def asignarValores(caso,tamanoMaximo):
+  binario=np.binary_repr(caso,width=tamanoMaximo) #Obtener la represntación binaria del número "caso" en forma de string
+  arreglo=np.zeros(tamanoMaximo) #Crear un arreglo de ceros al cual copiar los datos del string generado
+  for i in range(0,tamanoMaximo):
+    arreglo[i]=int(binario[i]) #Copiar cada valor del string binario a un arreglo
+  return arreglo #Retornar el arreglo
 
 
+#evaluarLista recibe la lista de fórmulas en 3-CNF, la cantidad de clausulas y la cantidad de proposiciones y retorna la satisfactibilidad de la lista
+#y una combinación de valores de verdad que satisface la lista, si es que hay alguna.
 def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
   arbol=construirArbol(lista,0,cantidadClausulas-1) #Se construye el árbol binario para esta lista de conjunciones de literales en 3-CNF
   combinacionesTotales=int(2**cantidadProposiciones) #Siempre habrá 2^cantidad de literales combinaciones de verdad posibles
@@ -132,7 +133,8 @@ def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
     mitad=combinacionesTotales//2 #Dividir las posibles valuaciones en mitades
     izquierda=mitad #Desde mitad hacia atras
     derecha=mitad+1 #Desde mitad+1 hacia adelante
-  while esSatisfactible==0 and combinacionesTotales>0 and izquierda>=0 and derecha<=2**cantidadProposiciones: #Mientras la formula no sea satisfactible con los valores de verdad actuales
+  while esSatisfactible==0 and combinacionesTotales>0 and izquierda>=0 and derecha<=2**cantidadProposiciones: 
+    #Mientras la formula no sea satisfactible con los valores de verdad actuales y no se hayan agotado las posibilidades
     combinacionesTotales-=2 #Descontar dos combinaciones posibles del total
     valoresDeVerdad=asignarValores(izquierda,cantidadProposiciones) #Asignar nuevos valores de verdad para la conversion binaria del numero izquierda a valores de verdad
     (esSatisfactible,valuacionTestigo)=arbol.recorrer(valoresDeVerdad) #Recorrer el árbol con los nuevos valores
@@ -142,9 +144,14 @@ def evaluarLista(lista,cantidadClausulas,cantidadProposiciones):
     if esSatisfactible: break #Si es satisfactible, parar
     izquierda-=1 #Disminuir izquierda en 1
     derecha+=1 #Aumentar derecha en 1
-  if esSatisfactible==1: #Si encontré una combinación de valores de verdad que satisface a todo el árbol
+  if esSatisfactible==1: #Si se encontró una combinación de valores de verdad que satisface a todo el árbol
+    for i in range(0,cantidadProposiciones): #Convertir el arreglo binario a un arreglo con los literales correspondientes
+        if valuacionTestigo[i]==1:
+            valuacionTestigo[i]=i+1
+        else:
+            valuacionTestigo[i]=-1*(i+1)
     return (True,valuacionTestigo) #Retornar True y la valuación testigo
-  else: #Si agoté todas las combinaciones y no se pudo satisfacer el árbol
+  else: #Si se agotaron todas las combinaciones y no se pudo satisfacer el árbol
     return (False,None) #Retornar False y None
       
     
@@ -152,7 +159,7 @@ cronometro=StopWatch() #Crear una instancia de stopwatch
 tiempoTotal=0 #Variables para registrar el tiempo total de cada algoritmo
 tiempoTotalMinisat=0
 
-f = open('Resultados.txt', 'w') #f es un archivo de texto en el que estarán todas las listas, su satisfactibilidad, testigo si es que hay y el tiempo total de cada algoritmo
+f = open('Resultados.txt', 'w') #f es un objeto para generar un archivo de texto en el que estarán todas las listas, su satisfactibilidad, testigo si es que hay y el tiempo total de cada algoritmo
 for i in range(0,20): #A lo largo de 20 iteraciones
     print('Iteracion numero: '+str(i+1)) #Imprimir a la consola
     f.write('Iteracion numero: '+str(i+1)+'\n') #Escribir en el archivo
@@ -185,8 +192,8 @@ for i in range(0,20): #A lo largo de 20 iteraciones
     f.write('Tiempo de ejecución: '+str(tiempo)+' seg \n') #Escribirlo
     Lista=list(lista) #Se convierte el arreglo de arreglos numpy a una lista de listas de python para entregarlo como argumento al algoritmo minisat
     for i in range(0,cantidadClausulas): #Por cada arreglo en la nueva lista
-        Lista[i]=list(Lista[i]) #Convertir el arreglo a lista
-        for j in range(0,3): #Por cada valor de la lista
+        Lista[i]=list(Lista[i]) #Convertir el arreglo a lista python
+        for j in range(0,3): #Por cada valor de la lista python
           Lista[i][j]=int(Lista[i][j]) #Convertir el valor a un entero
     cronometro.start() #Se empieza el cronometro
     with Minisat22(bootstrap_with=Lista) as m: #Se ejecuta el algoritmo minisat con la lista de clausulas 
@@ -208,10 +215,7 @@ for i in range(0,20): #A lo largo de 20 iteraciones
           f.write(str(testigoMinisat[i])+' ]\n')
     print('Tiempo de ejecución: ',tiempo,'s') #Imprimir el tiempo de ejecucion
     f.write('Tiempo de ejecución: '+str(tiempo)+' seg \n') #Escribirlo
-    if satisfactibilidadMinisat!=satisfactibilidad: 
-      #Si hay una discrepancia entre la satisfactibilidad según el algoritmo programado y el algoritmo Minisat
-      print('Discrepancia!')
-      break #Se detiene el programa, en teoría, este bloque if nunca debiese ejecutarse
+
 print('')
 print('Tiempo total de algoritmo propio: '+str(tiempoTotal)+' seg') #Imprimir el tiempo total del algoritmo programado
 print('Tiempo promedio: '+str(tiempoTotal/20)+' seg') #Imprimir el tiempo promedio del algoritmo propio por cada iteracion
